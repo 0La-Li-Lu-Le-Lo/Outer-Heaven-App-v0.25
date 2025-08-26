@@ -207,13 +207,18 @@
 
     function editTask(index) {
       const task = tasks[index];
+
+      // Populate input fields
       document.getElementById('title').value = task.title;
       document.getElementById('description').value = task.description;
       document.getElementById('date').value = task.date;
       document.getElementById('time').value = task.time;
       document.getElementById('priority').value = task.priority;
 
-      deleteTask(index);
+      // Remove task from array temporarily for updating
+      tasks.splice(index, 1);
+      saveTasks();
+      renderTasks();
     }
 
     document.getElementById('addBtn').addEventListener('click', addTask);
