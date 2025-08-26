@@ -2,191 +2,219 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Outer Heaven Task App</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #111;
-      color: #eee;
+      background: #1e1e1e;
+      color: #f5f5f5;
       margin: 0;
       padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
     }
-    h1 {
-      margin: 20px;
+
+    header {
+      background: #111;
+      padding: 1rem;
       text-align: center;
-      color: #f0db4f;
     }
-    #taskForm {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 20px;
+
+    h1 {
+      margin: 0;
+      color: #ffcc00;
     }
-    input, button, select {
-      padding: 8px;
-      border-radius: 6px;
-      border: none;
-      font-size: 14px;
-    }
-    input[type="text"] {
-      width: 200px;
-    }
-    input[type="time"] {
-      width: 140px;
-    }
-    button {
-      background: #f0db4f;
-      color: #111;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #e5c93d;
-    }
-    ul {
-      list-style: none;
-      padding: 0;
-      width: 90%;
-      max-width: 600px;
-    }
-    li {
-      background: #222;
-      margin: 8px 0;
-      padding: 12px;
+
+    .container {
+      max-width: 800px;
+      margin: 1rem auto;
+      padding: 1rem;
+      background: #2a2a2a;
       border-radius: 8px;
+    }
+
+    label {
+      display: block;
+      margin-top: 0.5rem;
+    }
+
+    input, select, textarea, button {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+
+    button {
+      background: #ffcc00;
+      color: #111;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+
+    button:hover {
+      background: #e6b800;
+    }
+
+    .task {
+      background: #3a3a3a;
+      margin: 0.5rem 0;
+      padding: 0.75rem;
+      border-radius: 6px;
+    }
+
+    .priority-high {
+      border-left: 6px solid red;
+    }
+    .priority-medium {
+      border-left: 6px solid yellow;
+    }
+    .priority-low {
+      border-left: 6px solid green;
+    }
+
+    .task-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      flex-wrap: wrap;
     }
-    .task-text {
-      flex: 1;
-      margin-right: 10px;
-    }
-    .task-time {
-      color: #bbb;
-      font-size: 0.9em;
-    }
-    .actions button {
-      margin-left: 6px;
+
+    .task-actions button {
       background: #444;
-      color: #eee;
+      color: #fff;
+      margin-left: 0.25rem;
     }
-    .actions button:hover {
+    .task-actions button:hover {
       background: #666;
     }
-    #controls {
-      margin-bottom: 20px;
+
+    .sort-container {
+      margin-bottom: 1rem;
     }
   </style>
 </head>
 <body>
-  <h1>Outer Heaven Tasks</h1>
+  <header>
+    <h1>Outer Heaven Task App</h1>
+  </header>
 
-  <form id="taskForm">
-    <input type="text" id="taskInput" placeholder="Enter new task" required />
-    <input type="time" id="taskTime" />
-    <button type="submit">Add Task</button>
-  </form>
+  <div class="container">
+    <h2>Add Task</h2>
+    <form id="taskForm">
+      <label>Title: <input type="text" id="title" required></label>
+      <label>Description: <textarea id="description"></textarea></label>
+      <label>Due Date: <input type="date" id="date" required></label>
+      <label>Time: <input type="time" id="time" required></label>
+      <label>Priority:
+        <select id="priority">
+          <option value="high">High 🔴</option>
+          <option value="medium">Medium 🟡</option>
+          <option value="low">Low 🟢</option>
+        </select>
+      </label>
+      <button type="submit">Add Task</button>
+    </form>
 
-  <div id="controls">
-    <select id="sortOptions">
-      <option value="default">Sort: Default</option>
-      <option value="alpha">Sort: A–Z</option>
-      <option value="time">Sort: By Time</option>
-    </select>
+    <div class="sort-container">
+      <label>Sort by:
+        <select id="sortOptions">
+          <option value="date">Due Date</option>
+          <option value="priority">Priority</option>
+          <option value="title">Title (A–Z)</option>
+        </select>
+      </label>
+    </div>
+
+    <h2>Task List</h2>
+    <div id="taskList"></div>
   </div>
 
-  <ul id="taskList"></ul>
-
   <script>
-    const taskForm = document.getElementById("taskForm");
-    const taskInput = document.getElementById("taskInput");
-    const taskTime = document.getElementById("taskTime");
-    const taskList = document.getElementById("taskList");
-    const sortOptions = document.getElementById("sortOptions");
+    let tasks = [];
 
-    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    document.getElementById('taskForm').addEventListener('submit', function(e) {
+      e.preventDefault();
 
-    function saveTasks() {
-      localStorage.setItem("tasks", JSON.stringify(tasks));
-    }
+      const title = document.getElementById('title').value;
+      const description = document.getElementById('description').value;
+      const date = document.getElementById('date').value;
+      const time = document.getElementById('time').value;
+      const priority = document.getElementById('priority').value;
+
+      tasks.push({ title, description, date, time, priority });
+      saveTasks();
+      renderTasks();
+
+      this.reset();
+    });
 
     function renderTasks() {
-      taskList.innerHTML = "";
+      const taskList = document.getElementById('taskList');
+      taskList.innerHTML = '';
+
+      const sortBy = document.getElementById('sortOptions').value;
       let sortedTasks = [...tasks];
-      if (sortOptions.value === "alpha") {
-        sortedTasks.sort((a, b) => a.text.localeCompare(b.text));
-      } else if (sortOptions.value === "time") {
-        sortedTasks.sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+
+      if (sortBy === 'priority') {
+        const order = { high: 1, medium: 2, low: 3 };
+        sortedTasks.sort((a,b) => order[a.priority] - order[b.priority]);
+      } else if (sortBy === 'date') {
+        sortedTasks.sort((a,b) => (a.date + a.time).localeCompare(b.date + b.time));
+      } else if (sortBy === 'title') {
+        sortedTasks.sort((a,b) => a.title.localeCompare(b.title));
       }
+
       sortedTasks.forEach((task, index) => {
-        const li = document.createElement("li");
+        const taskDiv = document.createElement('div');
+        taskDiv.className = `task priority-${task.priority}`;
 
-        const textSpan = document.createElement("span");
-        textSpan.className = "task-text";
-        textSpan.textContent = task.text;
+        taskDiv.innerHTML = `
+          <div class="task-header">
+            <strong>${task.title}</strong>
+            <div class="task-actions">
+              <button onclick="editTask(${index})">Edit</button>
+              <button onclick="deleteTask(${index})">Delete</button>
+            </div>
+          </div>
+          <p>${task.description}</p>
+          <p>Due: ${task.date} ${task.time}</p>
+          <p>Priority: ${task.priority}</p>
+        `;
 
-        const timeSpan = document.createElement("span");
-        timeSpan.className = "task-time";
-        timeSpan.textContent = task.time ? `⏰ ${task.time}` : "";
-
-        const actions = document.createElement("div");
-        actions.className = "actions";
-
-        const editBtn = document.createElement("button");
-        editBtn.textContent = "Edit";
-        editBtn.onclick = () => {
-          const newText = prompt("Edit task:", task.text);
-          const newTime = prompt("Edit time (HH:MM):", task.time || "");
-          if (newText !== null && newText.trim() !== "") {
-            tasks[index].text = newText.trim();
-            tasks[index].time = newTime || "";
-            saveTasks();
-            renderTasks();
-          }
-        };
-
-        const delBtn = document.createElement("button");
-        delBtn.textContent = "Delete";
-        delBtn.onclick = () => {
-          tasks.splice(index, 1);
-          saveTasks();
-          renderTasks();
-        };
-
-        actions.appendChild(editBtn);
-        actions.appendChild(delBtn);
-
-        li.appendChild(textSpan);
-        li.appendChild(timeSpan);
-        li.appendChild(actions);
-
-        taskList.appendChild(li);
+        taskList.appendChild(taskDiv);
       });
     }
 
-    taskForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const text = taskInput.value.trim();
-      const time = taskTime.value;
-      if (text !== "") {
-        tasks.push({ text, time });
-        saveTasks();
-        renderTasks();
-        taskInput.value = "";
-        taskTime.value = "";
-      }
-    });
+    function saveTasks() {
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+    }
 
-    sortOptions.addEventListener("change", renderTasks);
+    function loadTasks() {
+      const stored = localStorage.getItem('tasks');
+      if (stored) tasks = JSON.parse(stored);
+    }
 
+    function deleteTask(index) {
+      tasks.splice(index, 1);
+      saveTasks();
+      renderTasks();
+    }
+
+    function editTask(index) {
+      const task = tasks[index];
+      document.getElementById('title').value = task.title;
+      document.getElementById('description').value = task.description;
+      document.getElementById('date').value = task.date;
+      document.getElementById('time').value = task.time;
+      document.getElementById('priority').value = task.priority;
+
+      deleteTask(index);
+    }
+
+    document.getElementById('sortOptions').addEventListener('change', renderTasks);
+
+    loadTasks();
     renderTasks();
   </script>
 </body>
