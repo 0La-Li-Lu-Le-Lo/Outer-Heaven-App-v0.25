@@ -3,64 +3,191 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Outer Heaven Tasks</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Outer Heaven Task App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #eee;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    h1 {
+      margin: 20px;
+      text-align: center;
+      color: #f0db4f;
+    }
+    #taskForm {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    input, button, select {
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      font-size: 14px;
+    }
+    input[type="text"] {
+      width: 200px;
+    }
+    input[type="time"] {
+      width: 140px;
+    }
+    button {
+      background: #f0db4f;
+      color: #111;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #e5c93d;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      width: 90%;
+      max-width: 600px;
+    }
+    li {
+      background: #222;
+      margin: 8px 0;
+      padding: 12px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .task-text {
+      flex: 1;
+      margin-right: 10px;
+    }
+    .task-time {
+      color: #bbb;
+      font-size: 0.9em;
+    }
+    .actions button {
+      margin-left: 6px;
+      background: #444;
+      color: #eee;
+    }
+    .actions button:hover {
+      background: #666;
+    }
+    #controls {
+      margin-bottom: 20px;
+    }
+  </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center p-6">
-  <!-- Header -->
-  <h1 class="text-3xl font-bold mb-6">Outer Heaven Task Log</h1>
+<body>
+  <h1>Outer Heaven Tasks</h1>
 
-  <!-- Task Input -->
-  <div class="bg-gray-800 p-4 rounded-xl shadow-lg w-full max-w-md">
-    <input 
-      id="taskInput"
-      type="text"
-      placeholder="Enter task"
-      class="w-full p-2 rounded-lg text-black mb-3"
-    />
-    <input 
-      id="timeInput"
-      type="time"
-      class="w-full p-2 rounded-lg text-black mb-3"
-    />
-    <button 
-      onclick="addTask()"
-      class="w-full bg-blue-600 hover:bg-blue-700 p-2 rounded-lg">
-      Add Task
-    </button>
+  <form id="taskForm">
+    <input type="text" id="taskInput" placeholder="Enter new task" required />
+    <input type="time" id="taskTime" />
+    <button type="submit">Add Task</button>
+  </form>
+
+  <div id="controls">
+    <select id="sortOptions">
+      <option value="default">Sort: Default</option>
+      <option value="alpha">Sort: A–Z</option>
+      <option value="time">Sort: By Time</option>
+    </select>
   </div>
 
-  <!-- Task List -->
-  <ul id="taskList" class="mt-6 w-full max-w-md space-y-3"></ul>
+  <ul id="taskList"></ul>
 
   <script>
+    const taskForm = document.getElementById("taskForm");
     const taskInput = document.getElementById("taskInput");
-    const timeInput = document.getElementById("timeInput");
+    const taskTime = document.getElementById("taskTime");
     const taskList = document.getElementById("taskList");
+    const sortOptions = document.getElementById("sortOptions");
 
-    function addTask() {
-      const taskText = taskInput.value.trim();
-      const taskTime = timeInput.value;
+    let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
-      if (!taskText || !taskTime) {
-        alert("Please enter both a task and a time.");
-        return;
-      }
-
-      const li = document.createElement("li");
-      li.className = "flex justify-between items-center bg-gray-800 p-3 rounded-lg shadow";
-      li.innerHTML = `
-        <span>${taskTime} - ${taskText}</span>
-        <button onclick="this.parentElement.remove()" class="bg-red-600 hover:bg-red-700 px-2 py-1 rounded-lg">
-          ✖
-        </button>
-      `;
-      taskList.appendChild(li);
-
-      taskInput.value = "";
-      timeInput.value = "";
+    function saveTasks() {
+      localStorage.setItem("tasks", JSON.stringify(tasks));
     }
+
+    function renderTasks() {
+      taskList.innerHTML = "";
+      let sortedTasks = [...tasks];
+      if (sortOptions.value === "alpha") {
+        sortedTasks.sort((a, b) => a.text.localeCompare(b.text));
+      } else if (sortOptions.value === "time") {
+        sortedTasks.sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+      }
+      sortedTasks.forEach((task, index) => {
+        const li = document.createElement("li");
+
+        const textSpan = document.createElement("span");
+        textSpan.className = "task-text";
+        textSpan.textContent = task.text;
+
+        const timeSpan = document.createElement("span");
+        timeSpan.className = "task-time";
+        timeSpan.textContent = task.time ? `⏰ ${task.time}` : "";
+
+        const actions = document.createElement("div");
+        actions.className = "actions";
+
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "Edit";
+        editBtn.onclick = () => {
+          const newText = prompt("Edit task:", task.text);
+          const newTime = prompt("Edit time (HH:MM):", task.time || "");
+          if (newText !== null && newText.trim() !== "") {
+            tasks[index].text = newText.trim();
+            tasks[index].time = newTime || "";
+            saveTasks();
+            renderTasks();
+          }
+        };
+
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "Delete";
+        delBtn.onclick = () => {
+          tasks.splice(index, 1);
+          saveTasks();
+          renderTasks();
+        };
+
+        actions.appendChild(editBtn);
+        actions.appendChild(delBtn);
+
+        li.appendChild(textSpan);
+        li.appendChild(timeSpan);
+        li.appendChild(actions);
+
+        taskList.appendChild(li);
+      });
+    }
+
+    taskForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const text = taskInput.value.trim();
+      const time = taskTime.value;
+      if (text !== "") {
+        tasks.push({ text, time });
+        saveTasks();
+        renderTasks();
+        taskInput.value = "";
+        taskTime.value = "";
+      }
+    });
+
+    sortOptions.addEventListener("change", renderTasks);
+
+    renderTasks();
   </script>
 </body>
 </html>
